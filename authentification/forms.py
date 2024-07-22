@@ -4,10 +4,9 @@ from django.contrib.auth.forms import UserCreationForm
 from .models import CustomUser
 
 class RegistrationForm(UserCreationForm):
-    rooms_owner = forms.JSONField()
     class Meta:
         model = CustomUser
-        fields = ('username', 'password1', 'password2', 'rooms_owner')
+        fields = ('username', 'password1', 'password2')
 
     def clean_username(self):
         username = self.cleaned_data.get('username')
