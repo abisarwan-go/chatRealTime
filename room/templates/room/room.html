@@ -1,10 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Box</title>
+    <script>
+
+        const roomName = '{{ room_name }}'
+        let socket;
+
+        function add_message_in_chat_box(message) {
+            const chatBox = document.getElementById('chat-box');
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message';
+            messageElement.textContent = message;
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function init() {
+            socket = new WebSocket('ws://' + window.location.hostname + ':6379/ws/chat/' + roomName + '/');
+
+            socket.onopen = function() {
+                console.log('WebSocket connection established')
+            }
+
+            socket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                console.log("data type ", data.type)
+                console.log("data ", data);
+                add_message_in_chat_box(data.message);
+            }
+
+            socket.onclose = function () {
+                console.log('websocket connection closed');
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (message === '') return;
+
+            add_message_in_chat_box(message);
+
+            socket.send(JSON.stringify({
+                'message': message
+            }));
+
+            input.value = ''; // Clear the input field after sending the message
+        }
+
+        window.onload = init;
+    </script>
+    <style>
+        main    {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: white;
+            margin: 0;
+        }
+
+        .chat-container {
+            width: 400px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .chat-box {
+            height: 300px;
+            padding: 10px;
+            overflow-y: auto;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .chat-box .message {
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 4px;
+            background-color: #e1f7d5;
+        }
+
+        .chat-input-container {
+            display: flex;
+        }
+
+        #chat-input {
+            width: 80%;
+            padding: 10px;
+            border: none;
+            outline: none;
+            border-top: 1px solid #ccc;
+        }
+
+        button {
+            width: 20%;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Visually hidden label */
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            padding: 0;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
+    </style>
 </head>
 <body>
-$END$
+
+    {% include 'header.html' %}
+    <h1> {{ room_name }}</h1>
+    <main>
+        <div class="chat-container">
+            <div class="chat-box" id="chat-box">
+                <!-- Messages will be appended here -->
+            </div>
+            <div class="chat-input-container">
+                <label for="chat-input" class="visually-hidden">Type your message</label>
+                <input type="text" id="chat-input" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </main>
 </body>
 </html>

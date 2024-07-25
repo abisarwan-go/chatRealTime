@@ -1,10 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-
-</body>
-</html>
+<header>
+    <nav>
+        <ul>
+            <li><a href="{% url 'home' %}">Home</a></li>
+            {% if user.is_authenticated %}
+                <li> <a href="{% url 'logout' %}">Logout</a> </li>
+            {% else %}
+                 <li> <a href="{% url 'login' %}">Login</a> </li>
+            {% endif %}
+        </ul>
+    </nav>
+</header>

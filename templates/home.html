@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.querySelectorAll('.room').forEach(room => {
+                room.addEventListener('click', function() {
+                    const url = this.getAttribute('data-url');
+                    if (url) {
+                        window.location.href = url;
+                    }
+                });
+            });
+        });
+    </script>
+    <style>
+        .room-available {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .room {
+            background-color: #fff;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .room:hover {
+            transform: translateY(-30px);
+        }
+        .room h3 {
+            margin: 10px 0;
+        }
+        .room a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+        }
+        .room a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    {% include 'header.html' %}
+
+    <h3>Welcome to Channel</h3>
+
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% if user.is_authenticated %}
+    <div>
+        <h1>Create Room</h1>
+        <form method="post" action="{% url 'create_room' %}">
+            {% csrf_token %}
+            {{ form_create_room.as_p }}
+            <button type="submit">Create Room</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <h1>Room available</h1>
+    <div class="room-available">
+        {% for room in rooms %}
+            <div class="room" data-url="{% url 'room' room.room_name %}">
+                <h3>Room name : {{ room.room_name }}</h3>
+                <h3>Room owner : {{ room.room_owner }}</h3>
+                <h3>Room id : {{ room.id }}</h3>
+                {% if room.room_owner != user %}
+                    <a href="{% url 'join_room' room.id %}">Join Room</a>
+                {% endif %}
+            </div>
+         {% empty %}
+            <h2>There is not yet room</h2>
+        {% endfor %}
+    </div>
+
+</body>
+</html>
