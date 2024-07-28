@@ -2,13 +2,73 @@
 <html>
 <head>
     <title>Register</title>
+    <style>
+        .content-wrapper {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 90vh;
+            margin: 0;
+        }
+        .register-container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 600px;
+        }
+        h2 {
+            text-align: center;
+            color: #333333;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        form p {
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        form label {
+            width: 180px;
+            margin-right: 10px;
+        }
+        form input {
+            flex-grow: 1;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
-    <h2>Register</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Register</button>
-    </form>
+    {% include 'header.html' %}
+    <div class="content-wrapper">
+        <div class="register-container">
+            <h2>Register</h2>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit">Register</button>
+            </form>
+        </div>
+    </div>
+
+    {% if message %}
+        <p class="message"> {{ message }}</p>
+    {% endif %}
 </body>
 </html>

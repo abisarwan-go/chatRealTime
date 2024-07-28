@@ -22,4 +22,5 @@ urlpatterns = [
     path("", views.homeView.as_view(), name="home"),
     path("room/", include("room.urls")),
     path("authentication/", include("authentification.urls")),
+    path("notifications/", include("notifications.urls")),
 ]

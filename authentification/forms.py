@@ -8,6 +8,12 @@ class RegistrationForm(UserCreationForm):
         model = CustomUser
         fields = ('username', 'password1', 'password2')
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].help_text = None
+        self.fields['password1'].help_text = None
+        self.fields['password2'].help_text = None
+
     def clean_username(self):
         username = self.cleaned_data.get('username')
         if CustomUser.objects.filter(username=username).exists():

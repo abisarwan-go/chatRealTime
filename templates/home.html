@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login</title>
+    <title>Home</title>
     <script>
         document.addEventListener('DOMContentLoaded', (event) => {
             document.querySelectorAll('.room').forEach(room => {
@@ -15,25 +15,59 @@
         });
     </script>
     <style>
+        .title {
+            text-align: center;
+        }
+        main {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .left-section {
+            display: flex;
+            flex-direction: column;
+            margin-right: 20px;
+            width: 25%;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 1);
+        }
+        .right-section {
+            flex-grow: 1;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 1);
+        }
         .room-available {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 20px;
-            padding: 20px;
         }
         .room {
             background-color: #fff;
             border-radius: 15px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
             padding: 20px;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-align: center;
         }
         .room:hover {
-            transform: translateY(-30px);
+            transform: translateY(-10px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
         }
         .room h3 {
             margin: 10px 0;
+            font-size: 1.2em;
+            color: black;
         }
         .room a {
             text-decoration: none;
@@ -43,46 +77,106 @@
         .room a:hover {
             text-decoration: underline;
         }
+        .messages {
+            list-style: none;
+            padding: 0;
+        }
+        .messages li {
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #f1f1f1;
+            border-left: 5px solid #007bff;
+        }
+        .create-room-form {
+            margin-top: 20px;
+        }
+        .create-room-form h1 {
+            margin-bottom: 10px;
+        }
+        .create-room-form form {
+            display: flex;
+            flex-direction: column;
+        }
+        .create-room-form button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .create-room-form button:hover {
+            background-color: #0056b3;
+        }
+        .link-room {
+            color: #fff;
+            padding: 1px;
+            cursor: pointer;
+        }
+        .link-room.join-room {
+            background-color: #007bff; /* Blue */
+            color: #fff;
+            border-radius: 10px;
+
+        }
+        .link-room.join-room:hover {
+            background-color: #0056b3; /* Darker blue on hover */
+        }
+        .link-room.enter-room {
+            background-color: #28a745; /* Green */
+            color: #fff;
+            border-radius: 10px;
+        }
+        .link-room.enter-room:hover {
+            background-color: #218838; /* Darker green on hover */
+        }
+        .section-title {
+            margin: 0 0 20px 0;
+            font-size: 2em;
+        }
     </style>
 </head>
 <body>
     {% include 'header.html' %}
 
-    <h3>Welcome to Channel</h3>
+    <h1 class="title">Welcome to Channel</h1>
+    <main>
+        <div class="left-section">
+            {% if messages %}<ul class="messages">
+                    {% for message in messages %}
+                        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
 
-    {% if messages %}
-        <ul class="messages">
-            {% for message in messages %}
-                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-    {% if user.is_authenticated %}
-    <div>
-        <h1>Create Room</h1>
-        <form method="post" action="{% url 'create_room' %}">
-            {% csrf_token %}
-            {{ form_create_room.as_p }}
-            <button type="submit">Create Room</button>
-        </form>
-    </div>
-    {% endif %}
-
-    <h1>Room available</h1>
-    <div class="room-available">
-        {% for room in rooms %}
-            <div class="room" data-url="{% url 'room' room.room_name %}">
-                <h3>Room name : {{ room.room_name }}</h3>
-                <h3>Room owner : {{ room.room_owner }}</h3>
-                <h3>Room id : {{ room.id }}</h3>
-                {% if room.room_owner != user %}
-                    <a href="{% url 'join_room' room.id %}">Join Room</a>
-                {% endif %}
+            <div class="create-room-form">
+                <h1 class="section-title">Create Room</h1>
+                <form method="post" action="{% url 'create_room' %}">
+                    {% csrf_token %}
+                    {{ form_create_room.as_p }}
+                    <button type="submit">Create Room</button>
+                </form>
             </div>
-         {% empty %}
-            <h2>There is not yet room</h2>
-        {% endfor %}
-    </div>
+        </div>
 
+        <div class="right-section">
+            <h1 class="section-title">Room available</h1>
+            <div class="room-available">
+                {% for room in rooms %}
+                    <div class="room" data-url="{% url 'room' room.room_name %}">
+                        <h3>{{ room.room_name }}</h3>
+                        {% if not room.user_is_member %}
+                            <a class="link-room join-room" href="{% url 'join_room' room.id %}">Join Room</a>
+                        {% else %}
+                            <a class="link-room enter-room" href="{% url 'room' room.room_name %}">Enter Room</a>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <h2>There is not yet room</h2>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
 </body>
 </html>

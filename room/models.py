@@ -5,7 +5,7 @@ from authentification.models import CustomUser
 # Create your models here.
 
 class Room(models.Model):
-    room_name = models.CharField(max_length=50, unique=True)
+    room_name = models.CharField(max_length=16, unique=True)
     room_owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="owned_rooms")
     members = models.ManyToManyField(CustomUser, related_name="member_rooms")
     request_members = models.ManyToManyField(CustomUser, related_name="rooms_requested")

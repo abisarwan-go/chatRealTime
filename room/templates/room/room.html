@@ -3,141 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Box</title>
-    <script>
-
-        const roomName = '{{ room_name }}'
-        let socket;
-
-        function add_message_in_chat_box(message) {
-            const chatBox = document.getElementById('chat-box');
-            const messageElement = document.createElement('div');
-            messageElement.className = 'message';
-            messageElement.textContent = message;
-            chatBox.appendChild(messageElement);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        function init() {
-            socket = new WebSocket('ws://' + window.location.hostname + ':6379/ws/chat/' + roomName + '/');
-
-            socket.onopen = function() {
-                console.log('WebSocket connection established')
-            }
-
-            socket.onmessage = function(e) {
-                const data = JSON.parse(e.data);
-                console.log("data type ", data.type)
-                console.log("data ", data);
-                add_message_in_chat_box(data.message);
-            }
-
-            socket.onclose = function () {
-                console.log('websocket connection closed');
-            }
-        }
-
-        function handleKeyPress(event) {
-            if (event.key === 'Enter') {
-                sendMessage();
-            }
-        }
-
-        function sendMessage() {
-            const input = document.getElementById('chat-input');
-            const message = input.value.trim();
-            if (message === '') return;
-
-            add_message_in_chat_box(message);
-
-            socket.send(JSON.stringify({
-                'message': message
-            }));
-
-            input.value = ''; // Clear the input field after sending the message
-        }
-
-        window.onload = init;
-    </script>
+    <title>Chat Room</title>
     <style>
-        main    {
-            font-family: Arial, sans-serif;
+        .title {
+            text-align: center;
+        }
+        main {
             display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: white;
-            margin: 0;
+            height: calc(100vh - 70px); /* Adjusted for header height */
+            justify-content: space-between;
+            margin: 10px;
+            box-sizing: border-box;
         }
-
-        .chat-container {
-            width: 400px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: white;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+        .left-container, .right-container {
+            display: flex;
+            flex-direction: column;
+            padding: 15px; /* Reduced padding */
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 1);
+            background-color: #fff;
+            overflow: hidden; /* Prevent internal overflow */
+            max-height: 100%; /* Ensure they don't exceed main height */
+            font-size: 1em;
         }
-
-        .chat-box {
-            height: 300px;
-            padding: 10px;
+        .left-container {
+            width: 25%;
+            margin-right: 20px;
             overflow-y: auto;
-            border-bottom: 1px solid #ccc;
         }
-
-        .chat-box .message {
-            margin: 5px 0;
-            padding: 8px;
-            border-radius: 4px;
-            background-color: #e1f7d5;
+        .right-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
         }
-
+        .chat-box {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            max-height: calc(100% - 60px); /* New */
+        }
         .chat-input-container {
             display: flex;
+            flex-shrink: 0; /* Ensure input container does not shrink */
         }
-
-        #chat-input {
-            width: 80%;
-            padding: 10px;
-            border: none;
-            outline: none;
-            border-top: 1px solid #ccc;
+        .chat-input-container input {
+            flex-grow: 1;
+            margin-right: 10px;
         }
-
-        button {
-            width: 20%;
-            border: none;
-            background-color: #4CAF50;
+        .delete-room-link {
+            display: inline-block;
+            padding: 5px;
+            margin-top: 10px;
+            background-color: black;
             color: white;
-            padding: 10px;
-            cursor: pointer;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+            transition: background-color 0.3s ease;
         }
-
-        button:hover {
-            background-color: #45a049;
+        .delete-room-link:hover {
+            background-color: #e60000;
         }
-
-        /* Visually hidden label */
-        .visually-hidden {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            margin: -1px;
-            padding: 0;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            border: 0;
-        }
-
     </style>
 </head>
 <body>
-
     {% include 'header.html' %}
-    <h1> {{ room_name }}</h1>
+    <h1 class="title"> {{ room_name }}</h1>
     <main>
-        <div class="chat-container">
+        <div class="left-container room-info-container">
+            <button type="button" class="collapsible">Members</button>
+            <div class="content">
+                <ul>
+                    {% for member in members %}
+                        <li>{{ member }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% if room_owner %}
+            <button type="button" class="collapsible">Members Waiting for Approval</button><a></a>
+            <div class="content">
+                <ul>
+                    {% for request_member in request_members %}
+                        <li>
+                            {{ request_member }}
+                            <a href="{% url 'accept_member' room_name  request_member %}">Accept</a>
+                            <a href="{% url 'reject_member' room_name  request_member %}">Reject</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <a class="delete-room-link" href="{% url 'delete_room' room_name %}">Delete This Room</a>
+            </div>
+            {% endif %}
+        </div>
+        <div class="right-container chat-container">
             <div class="chat-box" id="chat-box">
                 <!-- Messages will be appended here -->
             </div>
@@ -148,5 +106,82 @@
             </div>
         </div>
     </main>
+
+    <script>
+    const roomName = '{{ room_name }}';
+    let socket;
+
+    function addMessageInChatBox(message) {
+        const chatBox = document.getElementById('chat-box');
+        const messageElement = document.createElement('div');
+        messageElement.className = 'message';
+        messageElement.textContent = message;
+        chatBox.appendChild(messageElement);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function initWebSocket() {
+        socket = new WebSocket('ws://' + window.location.hostname + ':6379/ws/chat/' + roomName + '/');
+
+        socket.onopen = function() {
+            console.log('WebSocket connection established');
+        };
+
+        socket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            addMessageInChatBox(data.message);
+        };
+
+        socket.onclose = function() {
+            console.log('WebSocket connection closed');
+        };
+
+        socket.onerror = function(error) {
+            console.log('WebSocket error:', error);
+        };
+    }
+
+    function handleKeyPress(event) {
+        if (event.key === 'Enter') {
+            sendMessage();
+        }
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('chat-input');
+        const message = input.value.trim();
+        if (message === '') return;
+
+        const senderMessage = "{{ user_name }}" + ': ' + message;
+
+        socket.send(JSON.stringify({
+            'message': senderMessage
+        }));
+
+        input.value = ''; // Clear the input field after sending the message
+    }
+
+    window.onload = function() {
+        initWebSocket();
+
+        const chatInput = document.getElementById('chat-input');
+        chatInput.addEventListener('keypress', handleKeyPress);
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const collapsibles = document.querySelectorAll(".collapsible");
+        collapsibles.forEach(collapsible => {
+            collapsible.addEventListener("click", function() {
+                this.classList.toggle("active");
+                const content = this.nextElementSibling;
+                if (content.style.maxHeight) {
+                    content.style.maxHeight = null;
+                } else {
+                    content.style.maxHeight = content.scrollHeight + "px";
+                }
+            });
+        });
+    });
+    </script>
 </body>
 </html>

@@ -4,6 +4,7 @@ from django.urls import reverse_lazy, reverse
 from django.views.generic import TemplateView
 
 from authentification.models import CustomUser
+from notifications.models import Notification
 from room.forms import CreateRoomForm
 from django.contrib import messages
 
@@ -33,57 +34,96 @@ def join_room(request, room_id):
     room = get_object_or_404(Room, pk=room_id)
     user = request.user
 
-    if user not in room.request_members.all():
-        room.request_members.add(user)
-        room.save()
+    if user in room.request_members.all():
+        messages.error(request, 'Waiting approval from admin')
+        return redirect('home')
     elif user in room.members.all():
         messages.error(request, "You are already a member!")
+        return redirect('home')
     else:
-        messages.error(request, 'Waiting approval from admin')
-    return redirect('home')
+        room.request_members.add(user)
+        room.save()
 
+        notification = Notification.objects.create(user=room.room_owner)
+        notification.add_message(f"{user.username} wants to join room {room.room_name}.")
+        notification.save()
+
+        messages.success(request, "Your demand has been sent")
+        return redirect('home')
 
 @login_required
-def accept_room(request, user, room_id):
-    room = get_object_or_404(Room, pk=room_id)
+def accept_member(request, user_wants_join, room_name):
+    room = get_object_or_404(Room, room_name=room_name)
+    user_wants_join = get_object_or_404(CustomUser, username=user_wants_join)
     owner = request.user
 
     if room.room_owner != owner:
         messages.error(request, f"You are not a owner for {room.room_name}!")
         return redirect('home')
 
-    if user in room.members.all():
-        messages.error(request, f"You are already a member for {room.room_name}!")
+    if user_wants_join in room.members.all():
+        messages.error(request, f"{user_wants_join} is already a member for {room.room_name}!")
         return redirect('home')
 
-    if user not in room.request_members.all():
-        messages.error(request, f"You have to join {room.room_name} first!")
+    if user_wants_join not in room.request_members.all():
+        messages.error(request, f"{user_wants_join} has to join {room.room_name} first!")
         return redirect('home')
 
-    room.members.add(user)
+    notification = Notification.objects.create(user=user_wants_join)
+    notification.add_message(f"You are now a member of {room.room_name}")
+    notification.save()
 
+    room.request_members.remove(user_wants_join)
+    room.members.add(user_wants_join)
+    room.save()
 
-def profile(request, username):
-    user = get_object_or_404(CustomUser, username=username)
-    is_owner = request.user.is_authenticated and request.user.username == user.username
+    return redirect(reverse('room', args=[room_name]))
 
-    if is_owner:
-        rooms = user.owned_rooms.all()
-    else:
-        rooms = user.owned_rooms.only('room_name', 'room_owner', 'members')
+@login_required
+def reject_member(request, user_wants_join, room_name):
+    room = get_object_or_404(Room, room_name=room_name)
+    user_wants_join = get_object_or_404(CustomUser, username=user_wants_join)
+    owner = request.user
 
-    return render(request,'room/profile.html', {
-                                                'rooms': rooms,
-                                                'is_owner': is_owner
-                                                })
+    if room.room_owner != owner:
+        messages.error(request, f"You are not a owner for {room.room_name}!")
+        return redirect('home')
+
+    if user_wants_join in room.members.all():
+        messages.error(request, f"{user_wants_join} is already a member for {room.room_name}!")
+        return redirect('home')
+
+    if user_wants_join not in room.request_members.all():
+        messages.error(request, f"{user_wants_join} has to join {room.room_name} first!")
+        return redirect('home')
+
+    notification = Notification.objects.create(user=user_wants_join)
+    notification.add_message(f"Your demand to join {room.room_name} has been rejected")
+    notification.save()
+
+    room.request_members.remove(user_wants_join)
+    room.save()
+
+    return redirect(reverse('room', args=[room_name]))
+
 @login_required
 def room(request, room_name):
     room = get_object_or_404(Room, room_name=room_name)
     if request.user not in room.members.all():
         messages.error(request, "You are not a member!")
         return redirect('home')
+
+    room_owner = request.user == room.room_owner
+    members = room.members.all()
+    for member in room.request_members.all():
+        print(f"ici {member}")
+    request_members = room.request_members.all() if room_owner else None
     return render(request,'room/room.html', {
         'room_name': room_name,
+        'user_name': request.user.username,
+        'room_owner': room_owner,
+        'members': members,
+        'request_members': request_members,
     })
 
 
@@ -98,3 +138,4 @@ def delete_room(request, room_name):
     room.delete()
     messages.success(request, f"Room {room_name} deleted!")
     return redirect('home')
+

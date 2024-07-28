@@ -21,11 +21,10 @@ class LoginView(FormView):
 class RegisterView(FormView):
     template_name = "authentification/register.html"
     form_class = RegistrationForm
-    success_url = reverse_lazy('home')
+    success_url = reverse_lazy('login')
 
     def form_valid(self, form):
         user = form.save()
-        login(self.request, user)
         return redirect(self.success_url)
 
 
